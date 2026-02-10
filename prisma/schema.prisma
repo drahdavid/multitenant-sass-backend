@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  OWNER
+  EMPLOYEE
+}
+
+enum ItemType {
+  PRODUCT
+  SERVICE
+}
+
+enum BookingStatus {
+  PRELOAD
+  CONFIRMED
+  DONE
+  CANCELLED
+  EXPIRED
+}
+
+enum PreOrderStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  isOpen    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  employees Employee[]
+  locations Location[]
+  items     Item[]
+  bookings  Booking[]
+  preorders PreOrder[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Employee {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("employees")
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  address   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("locations")
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  locationId  String?  @map("location_id")
+  type        ItemType
+  name        String
+  description String?
+  price       Float?
+  durationMin Int?     @map("duration_min")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, active])
+  @@map("items")
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  tenantId      String        @map("tenant_id")
+  employeeId    String        @map("employee_id")
+  itemId        String        @map("item_id")
+  startTime     DateTime      @map("start_time")
+  endTime       DateTime      @map("end_time")
+  status        BookingStatus
+  detail        String?
+  customerName  String?       @map("customer_name")
+  customerPhone String?       @map("customer_phone")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, employeeId, startTime, endTime])
+  @@map("bookings")
+}
+
+model PreOrder {
+  id             String         @id @default(uuid())
+  tenantId       String         @map("tenant_id")
+  itemId         String?        @map("item_id")
+  type           ItemType
+  notes          String?
+  status         PreOrderStatus
+  customerName   String?        @map("customer_name")
+  customerPhone  String?        @map("customer_phone")
+  customerEmail  String?        @map("customer_email")
+  requestedStart DateTime?      @map("requested_start")
+  requestedEnd   DateTime?      @map("requested_end")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("preorders")
+}
