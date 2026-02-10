@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
-async function bootstrap() {
+const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
@@ -29,11 +29,18 @@ async function bootstrap() {
     }),
   );
 
-  const port = configService.get<number>('PORT', 3001);
+  const port = process.env.PORT;
+
+  if (!port) {
+    throw new Error('PORT is not defined');
+  }
+
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`🏥 Health check: http://localhost:${port}/health`);
-}
+  console.log(`🚀 Application started on port ${port}`);
+};
 
-bootstrap();
+void bootstrap().catch((err: Error) => {
+  console.error('❌ Error starting application:', err);
+  process.exit(1);
+});
