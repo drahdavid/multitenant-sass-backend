@@ -41,6 +41,6 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(TenantMiddleware).forRoutes('*');
+    consumer.apply(TenantMiddleware).exclude('health').forRoutes('*');
   }
 }
